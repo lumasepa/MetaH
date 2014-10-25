@@ -1,163 +1,85 @@
-// Hay que hacer lector de fichero para los ejemplos
-   
-//-----------------------------------------------------------------------------
-// localizacionHC.cpp
-//-----------------------------------------------------------------------------
-//*
-// Localization problem using Hill Climbing
-//
-//-----------------------------------------------------------------------------
+#include <stdexcept>  
+#include <iostream>   
+#include <sstream>    
+#include <fstream>
+#include <string.h>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <eo> 
 
-#include <stdexcept>
-#include <iostream>
-
-#include <eo>
-#include <moSimpleHC.h>
-
-// Use functions from namespace std
 using namespace std;
 
-// REPRESENTATION
-//-----------------------------------------------------------------------------
-// define your individuals
-typedef eoBit<double> Indi;     // A bitstring with fitness double
+#include <ga/eoBit.h>                         
+#include <problems/bitString/moBitNeighbor.h> 
+#include <problems/eval/oneMaxFullEval.h>
+#include <problems/eval/moOneMaxIncrEval.h>
+#include <eval/moFullEvalByModif.h>
 
-// TODO Modificar función de evaluación
-//-----------------------------------------------------------------------------
-//  @param _indi A biststring individual
+#include <neighborhood/moOrderNeighborhood.h> 
+#include <algo/moSimpleHC.h>
 
-double binary_value(const Indi & _indi)
-{
-/*  double sum = 0;
-  for (unsigned i = 0; i < _indi.size(); i++)
-    sum += _indi[i];
-  return sum;*/
-}
-// GENERAL
-//-----------------------------------------------------------------------------
-void main_function(int argc, char **argv)
-{
-// PARAMETRES
-  // all parameters are hard-coded!
-  const unsigned int SEED = 42;      // seed for random number generator
-  const unsigned int VEC_SIZE = 5;   // Number of bits in genotypes
-  const unsigned int POP_SIZE = 10;  // Size of population
+typedef eoBit<unsigned int> Indi;
+typedef moBitNeighbor<unsigned int> Neighbor; 
 
-// GENERAL
-  //////////////////////////
-  //  Random seed
-  //////////////////////////
-  //reproducible random seed: if you don't change SEED above,
-  // you'll aways get the same result, NOT a random run
-  rng.reseed(SEED);
 
-// EVAL
-  /////////////////////////////
-  // Fitness function
-  ////////////////////////////
-  // Evaluation: from a plain C++ fn to an EvalFunc Object
-  eoEvalFuncPtr<Indi> eval(  binary_value );
+void main_function(int argc, char **argv) {
+    eoParser parser(argc, argv);
 
-// INIT
-  ////////////////////////////////
-  // Initilisation of population
-  ////////////////////////////////
+    eoValueParam<uint32_t> seedParam(time(0), "seed", "Random number seed", 'S');
+    parser.processParam( seedParam );
+    unsigned seed = seedParam.value();
 
-  // declare the population
-  eoPop<Indi> pop;
-  // fill it!
-  for (unsigned int igeno=0; igeno<POP_SIZE; igeno++)
-    {
-      Indi v;           // void individual, to be filled
-      for (unsigned ivar=0; ivar<VEC_SIZE; ivar++)
-	{
-	  bool r = rng.flip(); // new value, random in {0,1}
-	  v.push_back(r);      // append that random value to v
-	}
-      eval(v);                 // evaluate it
-      pop.push_back(v);        // and put it in the population
+    // length of the bit string
+    eoValueParam<unsigned int> vecSizeParam(20, "vecSize", "Genotype size", 'V');
+    parser.processParam( vecSizeParam, "Representation" );
+    unsigned vecSize = vecSizeParam.value();
+
+    // the name of the "status" file where all actual parameter values will be saved
+    string str_status = parser.ProgramName() + ".status"; // default value
+    eoValueParam<string> statusParam(str_status.c_str(), "status", "Status file");
+    parser.processParam( statusParam, "Persistence" );
+
+    // do the following AFTER ALL PARAMETERS HAVE BEEN PROCESSED
+    // i.e. in case you need parameters somewhere else, postpone these
+    if (parser.userNeedsHelp()) {
+        parser.printHelp(cout);
+        exit(1);
+    }
+    if (statusParam.value() != "") {
+        ofstream os(statusParam.value().c_str());
+        os << parser;// and you can use that file as parameter file
     }
 
-// OUTPUT
-  // sort pop before printing it!
-  pop.sort();
-  // Print (sorted) intial population (raw printout)
-  cout << "Initial Population" << endl;
-  cout << pop;
-  // shuffle  - this is a test
-  pop.shuffle();
-  // Print (sorted) intial population (raw printout)
-  cout << "Shuffled Population" << endl;
-  cout << pop;
+    rng.reseed(seed);
+    // Hay que construir las soluciones iniciales metiendo los datos desde arrays
 
-// ENGINE
-  /////////////////////////////////////
-  // selection and replacement
-  ////////////////////////////////////
-// SELECT
-  // The robust tournament selection
-  eoDetTournamentSelect<Indi> select(T_SIZE);  // T_SIZE in [2,POP_SIZE]
+    oneMaxEval<Indi> locEval;    // Hay que programar locEval y locNeighbor Eval
+    moOneMaxIncrEval<Neighbor> locNeighborEval;
 
-// REPLACE
-  // The simple GA evolution engine uses generational replacement
-  // so no replacement procedure is needed
+    moOrderNeighborhood<Neighbor> neighborhood(vecSize);
+    moSimpleHC<Neighbor> hc(neighborhood, locEval, locNeighborEval); 
 
-// OPERATORS
-  //////////////////////////////////////
-  // The variation operators
-  //////////////////////////////////////
-// CROSSOVER
-  // 1-point crossover for bitstring
-  eo1PtBitXover<Indi> xover;
-// MUTATION
-  // standard bit-flip mutation for bitstring
-  eoBitMutation<Indi>  mutation(P_MUT_PER_BIT);
+    Indi solution;
+    random(solution);
+    locEval(solution);
 
-// STOP
-// CHECKPOINT
-  //////////////////////////////////////
-  // termination condition
-  /////////////////////////////////////
-  // stop after MAX_GEN generations
-  eoGenContinue<Indi> continuator(MAX_GEN);
+    std::cout << "initial: " << solution << std::endl ;
 
-// GENERATION
-  /////////////////////////////////////////
-  // the algorithm
-  ////////////////////////////////////////
-  // standard Generational GA requires as parameters
-  // selection, evaluation, crossover and mutation, stopping criterion
+    // Apply the local search on the solution !
+    hc(solution);
 
+    // Output: the final solution
+    std::cout << "final:   " << solution << std::endl ;
 
-  eoSGA<Indi> gga(select, xover, CROSS_RATE, mutation, MUT_RATE,
-		  eval, continuator);
-
-  // Apply algo to pop - that's it!
-  gga(pop);
-
-// OUTPUT
-  // Print (sorted) intial population
-  pop.sort();
-  cout << "FINAL Population\n" << pop << endl;
-// GENERAL
 }
- // A main that catches the exceptions
+
 
 int main(int argc, char **argv)
 {
-
-    try
-    {
-	main_function(argc, argv);
+    try {
+        main_function(argc, argv);
     }
-    catch(exception& e)
-    {
-	cout << "Exception: " << e.what() << '\n';
+    catch (exception& e) {
+        cout << "Exception: " << e.what() << '\n';
     }
-
     return 1;
 }

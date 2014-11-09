@@ -10,15 +10,25 @@ using namespace std;
 
 #include <ga/eoBit.h>                         
 #include <problems/bitString/moBitNeighbor.h> 
-#include <problems/eval/oneMaxFullEval.h>
-#include <problems/eval/moOneMaxIncrEval.h>
+//#include <problems/eval/oneMaxFullEval.h>
+//#include <problems/eval/moOneMaxIncrEval.h>
 #include <eval/moFullEvalByModif.h>
 
 #include <neighborhood/moOrderNeighborhood.h> 
 #include <algo/moSimpleHC.h>
 
+// Para definir las funciones de evaluacion
+#include <locOneMaxFullEval.h>
+#include <locOneMaxIncrEval.h>
+// FIN
+
 typedef eoBit<unsigned int> Indi;
 typedef moBitNeighbor<unsigned int> Neighbor; 
+
+
+
+// Ponemos aqui las funciones de evaluacion para probar.
+
 
 
 void main_function(int argc, char **argv) {
@@ -52,8 +62,8 @@ void main_function(int argc, char **argv) {
     rng.reseed(seed);
     // Hay que construir las soluciones iniciales metiendo los datos desde arrays
 
-    oneMaxEval<Indi> locEval;    // Hay que programar locEval y locNeighbor Eval
-    moOneMaxIncrEval<Neighbor> locNeighborEval;
+    oneMaxEval<Indi> locOneMaxFullEval;    // Hay que programar locEval y locNeighbor Eval
+    moOneMaxIncrEval<Neighbor> locOneMaxIncrEval;
 
     moOrderNeighborhood<Neighbor> neighborhood(vecSize);
     moSimpleHC<Neighbor> hc(neighborhood, locEval, locNeighborEval); 

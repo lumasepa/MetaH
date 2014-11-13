@@ -11,6 +11,7 @@
 
 #include <stdexcept>  // runtime_error 
 #include <iostream>   // cout
+#include <fstream>   // ifstream
 #include <sstream>    // ostrstream, istrstream
 #include <fstream>
 #include <string.h>
@@ -50,6 +51,66 @@ typedef eoBit<unsigned int> Indi;                      // bit string with unsign
 typedef moBitNeighbor<unsigned int> Neighbor ;         // bit string neighbor with unsigned fitness type
 
 
+class ProblemDescription{
+
+public:
+    unsigned int warehouses_number;
+    unsigned int clients_number;
+
+    vector<unsigned int> warehouse_costs;
+    vector< vector<float> > client_to_wharehouse_distance;
+
+    ProblemDescription(){};
+    ProblemDescription(string problem_file){get_problem(problem_file);}
+
+    void get_problem(string problem_file){
+        ifstream file(problem_file.c_str(), std::ifstream::in);
+        if (file.fail())
+        {
+            cout << "Error opening file : " << problem_file << endl;
+            exit(-10);
+        }
+
+        file >> warehouses_number;
+        file >> clients_number;
+
+        int cost = 0;
+        int ignore = 0;
+
+        for (int i = 0; i < warehouses_number; ++i){
+            file >> ignore;
+            file >> cost;
+            warehouse_costs.push_back(cost);
+        }
+
+        float distance_cost;
+
+        for (int i = 0; i < clients_number; ++i){
+            file >> ignore;
+            client_to_wharehouse_distance.push_back(vector<float>());
+            for (int j = 0; j < warehouses_number; ++j) {
+                file >> distance_cost;
+                client_to_wharehouse_distance[i].push_back(distance_cost);
+            }
+        }
+    }
+
+    float operator()(int client, int warehouse){
+        return client_to_wharehouse_distance[client][warehouse];
+    }
+
+    unsigned int operator()(int warehouse){
+        return warehouse_costs[warehouse];
+    }
+};
+
+class WarehouseSolution {
+    eoBit<unsigned int> warehouses;
+    ProblemDescription * problem_description;
+};
+
+
+
 // Main function
 //-----------------------------------------------------------------------------
 void main_function(int argc, char **argv)
@@ -67,6 +128,11 @@ void main_function(int argc, char **argv)
 
     // For each parameter, define Parameter, read it through the parser,
     // and assign the value to the variable
+
+    // File with the problem
+    eoValueParam<string> problem_file_param("", "problem_file", "Problem File", 'F', true);
+    parser.processParam( problem_file_param );
+    string problem_file = problem_file_param.value();
 
     // random seed parameter
     eoValueParam<uint32_t> seedParam(time(0), "seed", "Random number seed", 'S');
@@ -93,6 +159,10 @@ void main_function(int argc, char **argv)
         ofstream os(statusParam.value().c_str());
         os << parser;// and you can use that file as parameter file
     }
+
+    cout << problem_file << endl;
+    problem_file = "cap71.txt";
+    ProblemDescription problemDescription(problem_file);
 
     /* =========================================================
      *
@@ -172,13 +242,13 @@ void main_function(int argc, char **argv)
     fullEval(solution);
 
     // Output: the intial solution
-    std::cout << "initial: " << solution << std::endl ;
+    cout << "initial: " << solution << endl ;
 
     // Apply the local search on the solution !
     hc(solution);
 
     // Output: the final solution
-    std::cout << "final:   " << solution << std::endl ;
+    cout << "final:   " << solution << endl ;
 
 }
 

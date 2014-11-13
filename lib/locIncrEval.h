@@ -47,7 +47,7 @@ public:
     * @param _neighbor the neighbor to consider (of type moBitNeigbor)
     */
     virtual void operator()(EOT & _solution, Neighbor & _neighbor) {
-        if (_solution[_neighbor.index()] == 0)
+        if (_solution[_neighbor.index()] == 1)
             _neighbor.fitness(_solution.fitness() + 1);
         else
             _neighbor.fitness(_solution.fitness() - 1);

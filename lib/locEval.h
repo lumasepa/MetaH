@@ -69,16 +69,16 @@ public:
         unsigned int posCost = 0; // Warehouse cost 100*warehouses in this case
         for (unsigned int i = 0; i < _sol.size(); i++) {   // For each warehouse
             posCost += _sol[i] * locCost;
+            unsigned int minDistance = 0; // The minium distance between a client and one possible WH
             for (unsigned int j = 0; j < clients; j++) {   // For each client
-                unsigned int minDistance = 0; // The minium distance between a client and one possible WH
                 if (_sol[i] == 1) {
                     if (minDistance == 0)
                         minDistance = distance[i][j];
                     if (distance[i][j] <= minDistance)
                         minDistance = distance[i][j];
                 }
-                sum += minDistance;
             }
+                sum += minDistance;
         }
         sum += posCost;
         _sol.fitness(sum);

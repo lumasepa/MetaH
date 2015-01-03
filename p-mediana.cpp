@@ -29,7 +29,7 @@ using namespace std;
 
 //-----------------------------------------------------------------------------
 // fitness function, and evaluation of neighbors
-#include "SPLP_locEval.h"
+#include "p-mediana_locEval.h"
 #include <locIncrEval.h>
 #include <eval/moFullEvalByModif.h>
 
@@ -40,6 +40,8 @@ using namespace std;
 //-----------------------------------------------------------------------------
 // the simple Hill-Climbing local search
 #include <algo/moSimpleHC.h>
+
+#include "eoInitP.h"
 
 // Declaration of types
 //-----------------------------------------------------------------------------
@@ -73,9 +75,9 @@ void main_function(int argc, char **argv)
     // and assign the value to the variable
 
     // File with the problem
-    eoValueParam<string> problem_file_param("", "problem_file", "Problem File", 'F', true);
+    string problem_file = string("cap71.txt");
+    eoValueParam<string> problem_file_param(problem_file.c_str(), "problem_file", "Problem File", 'F', true);
     parser.processParam( problem_file_param );
-    string problem_file = problem_file_param.value();
 
     // random seed parameter
     eoValueParam<uint32_t> seedParam(time(0), "seed", "Random number seed", 'S');
@@ -99,7 +101,6 @@ void main_function(int argc, char **argv)
     }
 
     cout << "problem_file : " << problem_file << endl;
-    problem_file = "cap71.txt";
     problemDescription.set_problem_from_file(problem_file);
     //*problemDescription.print(cout);
 
@@ -122,8 +123,7 @@ void main_function(int argc, char **argv)
 
     // a Indi random initializer: each bit is random
     // more information: see EO tutorial lesson 1 (FirstBitGA.cpp)
-    eoUniformGenerator<bool> uGen;
-    eoInitFixedLength<Indi> random(problemDescription.warehouses_number, uGen);
+    eoInitP<Indi> random(problemDescription.warehouses_number,problemDescription.warehouses_number/2);
 
     /* =========================================================
      *

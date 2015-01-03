@@ -6,6 +6,7 @@
 /**
  * Full evaluation Function for OneMax problem
  */
+#include <climits>
 
 template< class EOT > class oneMaxEval : public eoEvalFunc<EOT>
 {
@@ -27,25 +28,37 @@ public:
         for (unsigned int i = 0; i < _sol.size(); i++)
             sum += _sol[i];
 */
-        unsigned int sum = 0; // Objective Fitness
-        unsigned int posCost = 0; // Warehouse cost 100*warehouses in this case
-        for (unsigned int i = 0; i < _sol.size(); i++) {   // For each warehouse
-            posCost += _sol[i] * locCost;
-            unsigned int minDistance = 0; // The minium distance between a client and one possible WH
-            for (unsigned int j = 0; j < problemDescription.clients_number; j++) {   // For each client
-                if (_sol[i] == 1) {
-                    if (minDistance == 0)
-                        minDistance = problemDescription.client_to_wharehouse_distance[i][j];
-                    if (problemDescription.client_to_wharehouse_distance[i][j] <= minDistance)
-                        minDistance = problemDescription.client_to_wharehouse_distance[i][j];
-                }
+        // Tiene que haber por lo menos un warehouse en la solucion
+        bool is_valid_solution = false;
+        for (unsigned int i = 0; i < _sol.size(); i++)
+        {
+            if(_sol[i] == 1) {
+                is_valid_solution = true;
+                break;
             }
-            sum += minDistance;
         }
-        //cout << "antes = " << _sol.fitness() << "\n";
-        cout << "despues = " << sum << "\n";
-        sum += posCost;
-        _sol.fitness(sum);
+        if (is_valid_solution){
+            unsigned int sum = 0; // Objective Fitness
+            unsigned int posCost = 0; // Warehouse cost 100*warehouses in this case
+            for (unsigned int i = 0; i < _sol.size(); i++) {   // For each warehouse
+                posCost += _sol[i] * locCost;
+                unsigned int minDistance = 0; // The minium distance between a client and one possible WH
+                for (unsigned int j = 0; j < problemDescription.clients_number; j++) {   // For each client
+                    if (_sol[i] == 1) {
+                        if (minDistance == 0)
+                            minDistance = problemDescription.client_to_wharehouse_distance[i][j];
+                        if (problemDescription.client_to_wharehouse_distance[i][j] <= minDistance)
+                            minDistance = problemDescription.client_to_wharehouse_distance[i][j];
+                    }
+                }
+                sum += minDistance;
+            }
+            //cout << "antes = " << _sol.fitness() << "\n";
+            cout << "despues = " << sum << "\n";
+            sum += posCost;
+            _sol.fitness(sum);
+        }
+        _sol.fitness(INT_MAX);
     }
 };
 

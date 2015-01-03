@@ -44,11 +44,11 @@ using namespace std;
 // Declaration of types
 //-----------------------------------------------------------------------------
 // Indi is the typedef of the solution type like in paradisEO-eo
-typedef eoBit<unsigned int> Indi;                      // bit string with unsigned fitness type
+typedef eoBit<eoMinimizingFitness> Indi;                      // bit string with unsigned fitness type
 // Neighbor is the typedef of the neighbor type,
 // Neighbor = How to compute the neighbor from the solution + information on it (i.e. fitness)
 // all classes from paradisEO-mo use this template type
-typedef moBitNeighbor<unsigned int> Neighbor ;         // bit string neighbor with unsigned fitness type
+typedef moBitNeighbor<eoMinimizingFitness> Neighbor ;         // bit string neighbor with unsigned fitness type
 
 
 class ProblemDescription{
@@ -202,10 +202,10 @@ void main_function(int argc, char **argv)
      * ========================================================= */
 
     // Use it if there is no incremental evaluation: a neighbor is evaluated by the full evaluation of a solution
-    // moFullEvalByModif<Neighbor> neighborEval(fullEval);
+    moFullEvalByModif<Neighbor> neighborEval(fullEval);
 
     // Incremental evaluation of the neighbor: fitness is modified by +/- 1
-    moOneMaxIncrEval<Neighbor> neighborEval;
+    //moOneMaxIncrEval<Neighbor> neighborEval;
 
     /* =========================================================
      *

@@ -49,8 +49,10 @@ public:
                         minDistance = distance[i][j];
                 }
             }
-                sum += minDistance;
+            sum += minDistance;
         }
+        cout << "antes = " << _sol.fitness() << "\n";
+        cout << "despues = " << sum << "\n";
         sum += posCost;
         _sol.fitness(sum);
     }

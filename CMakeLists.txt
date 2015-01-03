@@ -58,8 +58,6 @@ LINK_DIRECTORIES(${PARADISEO_EO_BIN_DIR}/lib)
 ######################################################################################
 
 ADD_EXECUTABLE(lesson1_simpleHC lesson1_simpleHC.cpp)
-ADD_EXECUTABLE(localizacionHC localizacionHC.cpp)
-ADD_EXECUTABLE(localizacion localizacion.cpp)
 
 
 
@@ -71,8 +69,6 @@ ADD_EXECUTABLE(localizacion localizacion.cpp)
 ######################################################################################
 
 # Only if you need to link libraries
-TARGET_LINK_LIBRARIES(localizacionHC ga eo eoutils)
-TARGET_LINK_LIBRARIES(localizacion ga eo eoutils)
 TARGET_LINK_LIBRARIES(lesson1_simpleHC ga eo eoutils)
 
 ######################################################################################

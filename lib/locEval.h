@@ -7,6 +7,7 @@
  * Full evaluation Function for OneMax problem
  */
 #include <climits>
+#include <cfloat>
 
 template< class EOT > class oneMaxEval : public eoEvalFunc<EOT>
 {
@@ -18,16 +19,10 @@ public:
 	 */
     void operator() (EOT& _sol) {
 
-
-        int locCost = 100; // In this case is 100 for all warehouses, we use this for simplicity
-
 // Nota, la función objetivo devuelve, el coste de poner los warehouses
 // en este caso, 100*el nº de 1 en el vector solución y a eso se le suma
 // el minimo de las distancias entre los WH y todos los clientes
-       /* unsigned int sum = 0;
-        for (unsigned int i = 0; i < _sol.size(); i++)
-            sum += _sol[i];
-*/
+
         // Tiene que haber por lo menos un warehouse en la solucion
         bool is_valid_solution = false;
         for (unsigned int i = 0; i < _sol.size(); i++)
@@ -37,26 +32,33 @@ public:
                 break;
             }
         }
+
         if (is_valid_solution){
-            unsigned int sum = 0; // Objective Fitness
-            unsigned int posCost = 0; // Warehouse cost 100*warehouses in this case
+            float total_cost = 0; // Objective Fitness
+            unsigned int warehose_total_cost = 0;
             for (unsigned int i = 0; i < _sol.size(); i++) {   // For each warehouse
-                posCost += _sol[i] * locCost;
-                unsigned int minDistance = 0; // The minium distance between a client and one possible WH
-                for (unsigned int j = 0; j < problemDescription.clients_number; j++) {   // For each client
-                    if (_sol[i] == 1) {
-                        if (minDistance == 0)
+                // si seleccionamos ese warehouse en la solucion a evaluar
+                if (_sol[i] == 1) {
+                    warehose_total_cost += problemDescription.warehouse_costs[i];
+                }
+            }
+
+            for (int i = 0; i < problemDescription.clients_number; ++i){
+                float minDistance = FLT_MAX;
+                for (int j = 0; j < problemDescription.warehouses_number; ++j) {
+                    if(_sol[j] == 1){
+                        if (problemDescription.client_to_wharehouse_distance[i][j] < minDistance){
                             minDistance = problemDescription.client_to_wharehouse_distance[i][j];
-                        if (problemDescription.client_to_wharehouse_distance[i][j] <= minDistance)
-                            minDistance = problemDescription.client_to_wharehouse_distance[i][j];
+                        }
                     }
                 }
-                sum += minDistance;
+                total_cost += minDistance;
             }
+
             //cout << "antes = " << _sol.fitness() << "\n";
-            cout << "despues = " << sum << "\n";
-            sum += posCost;
-            _sol.fitness(sum);
+            total_cost += warehose_total_cost;
+            _sol.fitness(total_cost);
+            cout << "sol = " << _sol << endl;
         }else{
             _sol.fitness(INT_MAX);
         }

@@ -50,9 +50,8 @@ typedef eoBit<eoMinimizingFitness> Indi;                      // bit string with
 // all classes from paradisEO-mo use this template type
 typedef moBitNeighbor<eoMinimizingFitness> Neighbor ;         // bit string neighbor with unsigned fitness type
 
-
-#include <ProblemDescription.h>
-
+// Singleton with the problem description
+#include <SPLP_ProblemDescription.h>
 
 
 // Main function

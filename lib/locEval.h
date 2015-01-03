@@ -2,7 +2,7 @@
 #define _oneMaxEval_h
 
 #include <eoEvalFunc.h>
-#include <ProblemDescription.h>
+#include <SPLP_ProblemDescription.h>
 /**
  * Full evaluation Function for OneMax problem
  */
@@ -20,8 +20,7 @@ public:
     void operator() (EOT& _sol) {
 
 // Nota, la función objetivo devuelve, el coste de poner los warehouses
-// en este caso, 100*el nº de 1 en el vector solución y a eso se le suma
-// el minimo de las distancias entre los WH y todos los clientes
+// y a eso se le suma el minimo de las distancias entre los clientes y los warehouses
 
         // Tiene que haber por lo menos un warehouse en la solucion
         bool is_valid_solution = false;
@@ -32,34 +31,41 @@ public:
                 break;
             }
         }
-
+        // si hay al menos un warehouse en la solucion
         if (is_valid_solution){
-            float total_cost = 0; // Objective Fitness
+
+            float total_cost = 0;
+
             unsigned int warehose_total_cost = 0;
-            for (unsigned int i = 0; i < _sol.size(); i++) {   // For each warehouse
+
+            // calculamos el coste total de los warehouses
+            for (unsigned int i = 0; i < _sol.size(); i++) {
                 // si seleccionamos ese warehouse en la solucion a evaluar
                 if (_sol[i] == 1) {
                     warehose_total_cost += problemDescription.warehouse_costs[i];
                 }
             }
-
+            // calculamos el coste de cada cliente al warehouse con menos coste
             for (int i = 0; i < problemDescription.clients_number; ++i){
                 float minDistance = FLT_MAX;
                 for (int j = 0; j < problemDescription.warehouses_number; ++j) {
+                    // si es uno de los warehouses seleccionados en la solucion a evaluar
                     if(_sol[j] == 1){
                         if (problemDescription.client_to_wharehouse_distance[i][j] < minDistance){
                             minDistance = problemDescription.client_to_wharehouse_distance[i][j];
                         }
                     }
                 }
+                // Añadimos el coste minimo del cliente al warehouse
                 total_cost += minDistance;
             }
-
-            //cout << "antes = " << _sol.fitness() << "\n";
+            // Añadimos el coste de los warehouses seleccionados al total
             total_cost += warehose_total_cost;
             _sol.fitness(total_cost);
             cout << "sol = " << _sol << endl;
-        }else{
+
+        } // Si la solucion no es valida
+        else {
             _sol.fitness(INT_MAX);
         }
     }

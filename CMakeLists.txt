@@ -57,7 +57,7 @@ LINK_DIRECTORIES(${PARADISEO_EO_BIN_DIR}/lib)
 ### 4) Define your target: just an executable here
 ######################################################################################
 
-ADD_EXECUTABLE(lesson1_simpleHC lesson1_simpleHC.cpp)
+ADD_EXECUTABLE(SPLP SPLP.cpp)
 
 
 
@@ -69,7 +69,7 @@ ADD_EXECUTABLE(lesson1_simpleHC lesson1_simpleHC.cpp)
 ######################################################################################
 
 # Only if you need to link libraries
-TARGET_LINK_LIBRARIES(lesson1_simpleHC ga eo eoutils)
+TARGET_LINK_LIBRARIES(SPLP ga eo eoutils)
 
 ######################################################################################
 

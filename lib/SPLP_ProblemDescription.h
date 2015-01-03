@@ -1,5 +1,5 @@
-#ifndef ProblemDescription_h
-#define ProblemDescription_h
+#ifndef SPLP_ProblemDescription_h
+#define SPLP_ProblemDescription_h
 
 #include <vector>
 #include <string>
@@ -7,23 +7,23 @@
 
 using namespace std;
 
-class ProblemDescription{
+class SPLP_ProblemDescription {
 
 public:
-    static ProblemDescription& getInstance()
+    static SPLP_ProblemDescription & getInstance()
     {
-        static ProblemDescription instance; // Guaranteed to be destroyed.
+        static SPLP_ProblemDescription instance; // Guaranteed to be destroyed.
         // Instantiated on first use.
         return instance;
     }
 
 private:
-    ProblemDescription() {};
+    SPLP_ProblemDescription() {};
     // Dont forget to declare these two. You want to make sure they
     // are unaccessable otherwise you may accidently get copies of
     // your singleton appearing.
-    ProblemDescription(ProblemDescription const&); // Don't Implement
-    void operator=(ProblemDescription const&); // Don't implement
+    SPLP_ProblemDescription(SPLP_ProblemDescription const&); // Don't Implement
+    void operator=(SPLP_ProblemDescription const&); // Don't implement
 
 public:
     unsigned int warehouses_number;
@@ -92,7 +92,7 @@ public:
 
 };
 
-#define problemDescription ProblemDescription::getInstance()
+#define problemDescription SPLP_ProblemDescription::getInstance()
 
 /*class WarehouseSolution {
     eoBit<unsigned int> warehouses;

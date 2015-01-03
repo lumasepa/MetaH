@@ -57,8 +57,9 @@ public:
             cout << "despues = " << sum << "\n";
             sum += posCost;
             _sol.fitness(sum);
+        }else{
+            _sol.fitness(INT_MAX);
         }
-        _sol.fitness(INT_MAX);
     }
 };
 

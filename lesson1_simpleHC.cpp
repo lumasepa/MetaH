@@ -51,63 +51,7 @@ typedef eoBit<eoMinimizingFitness> Indi;                      // bit string with
 typedef moBitNeighbor<eoMinimizingFitness> Neighbor ;         // bit string neighbor with unsigned fitness type
 
 
-class ProblemDescription{
-
-public:
-    unsigned int warehouses_number;
-    unsigned int clients_number;
-
-    vector<unsigned int> warehouse_costs;
-    vector< vector<float> > client_to_wharehouse_distance;
-
-    ProblemDescription(){};
-    ProblemDescription(string problem_file){get_problem(problem_file);}
-
-    void get_problem(string problem_file){
-        ifstream file(problem_file.c_str(), std::ifstream::in);
-        if (file.fail())
-        {
-            cout << "Error opening file : " << problem_file << endl;
-            exit(-10);
-        }
-
-        file >> warehouses_number;
-        file >> clients_number;
-
-        int cost = 0;
-        int ignore = 0;
-
-        for (int i = 0; i < warehouses_number; ++i){
-            file >> ignore;
-            file >> cost;
-            warehouse_costs.push_back(cost);
-        }
-
-        float distance_cost;
-
-        for (int i = 0; i < clients_number; ++i){
-            file >> ignore;
-            client_to_wharehouse_distance.push_back(vector<float>());
-            for (int j = 0; j < warehouses_number; ++j) {
-                file >> distance_cost;
-                client_to_wharehouse_distance[i].push_back(distance_cost);
-            }
-        }
-    }
-
-    float operator()(int client, int warehouse){
-        return client_to_wharehouse_distance[client][warehouse];
-    }
-
-    unsigned int operator()(int warehouse){
-        return warehouse_costs[warehouse];
-    }
-};
-
-class WarehouseSolution {
-    eoBit<unsigned int> warehouses;
-    ProblemDescription * problem_description;
-};
+#include <ProblemDescription.h>
 
 
 
@@ -139,11 +83,6 @@ void main_function(int argc, char **argv)
     parser.processParam( seedParam );
     unsigned seed = seedParam.value();
 
-    // length of the bit string
-    eoValueParam<unsigned int> vecSizeParam(4, "vecSize", "Genotype size", 'V');
-    parser.processParam( vecSizeParam, "Representation" );
-    unsigned vecSize = vecSizeParam.value();
-
     // the name of the "status" file where all actual parameter values will be saved
     string str_status = parser.ProgramName() + ".status"; // default value
     eoValueParam<string> statusParam(str_status.c_str(), "status", "Status file");
@@ -160,9 +99,10 @@ void main_function(int argc, char **argv)
         os << parser;// and you can use that file as parameter file
     }
 
-    cout << problem_file << endl;
+    cout << "problem_file : " << problem_file << endl;
     problem_file = "cap71.txt";
-    ProblemDescription problemDescription(problem_file);
+    problemDescription.set_problem_from_file(problem_file);
+    //*problemDescription.print(cout);
 
     /* =========================================================
      *
@@ -184,7 +124,7 @@ void main_function(int argc, char **argv)
     // a Indi random initializer: each bit is random
     // more information: see EO tutorial lesson 1 (FirstBitGA.cpp)
     eoUniformGenerator<bool> uGen;
-    eoInitFixedLength<Indi> random(vecSize, uGen);
+    eoInitFixedLength<Indi> random(problemDescription.warehouses_number, uGen);
 
     /* =========================================================
      *
@@ -205,7 +145,7 @@ void main_function(int argc, char **argv)
     moFullEvalByModif<Neighbor> neighborEval(fullEval);
 
     // Incremental evaluation of the neighbor: fitness is modified by +/- 1
-    //moOneMaxIncrEval<Neighbor> neighborEval;
+    // moOneMaxIncrEval<Neighbor> neighborEval;
 
     /* =========================================================
      *
@@ -215,7 +155,7 @@ void main_function(int argc, char **argv)
 
     // Exploration of the neighborhood in increasing order of the neigbor's index:
     // bit-flip from bit 0 to bit (vecSize - 1)
-    moOrderNeighborhood<Neighbor> neighborhood(vecSize);
+    moOrderNeighborhood<Neighbor> neighborhood(problemDescription.warehouses_number);
 
     /* =========================================================
      *

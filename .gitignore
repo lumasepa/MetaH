@@ -5,3 +5,9 @@ Makefile
 cmake_install.cmake
 .idea
 CMakeFiles
+.cproject
+.project
+lesson1_simpleHC
+lesson1_simpleHC.status
+localizacionHC
+

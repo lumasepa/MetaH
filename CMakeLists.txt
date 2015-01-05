@@ -23,7 +23,10 @@ PROJECT(MetaH)
 ######################################################################################
 
 INCLUDE_DIRECTORIES(${PARADISEO_EO_SRC_DIR}/src
-                    ${PARADISEO_MO_SRC_DIR}/src )
+                    ${PARADISEO_MO_SRC_DIR}/src
+                    ${PARADISEO_DIR}/problems
+                    lib
+                    )
 
 #INCLUDE_DIRECTORIES(${PARADISEO_EO_SRC_DIR}/src
 #                    ${PARADISEO_MO_SRC_DIR}/src
@@ -54,7 +57,10 @@ LINK_DIRECTORIES(${PARADISEO_EO_BIN_DIR}/lib)
 ### 4) Define your target: just an executable here
 ######################################################################################
 
-ADD_EXECUTABLE(localizacion localizacion.cpp)
+ADD_EXECUTABLE(SPLP SPLP.cpp)
+ADD_EXECUTABLE(p-mediana p-mediana.cpp)
+
+
 
 ######################################################################################
 
@@ -64,7 +70,8 @@ ADD_EXECUTABLE(localizacion localizacion.cpp)
 ######################################################################################
 
 # Only if you need to link libraries
-TARGET_LINK_LIBRARIES(localizacion ga eo eoutils)
+TARGET_LINK_LIBRARIES(SPLP ga eo eoutils)
+TARGET_LINK_LIBRARIES(p-mediana ga eo eoutils)
 
 ######################################################################################
 

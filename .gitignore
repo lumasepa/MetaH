@@ -5,3 +5,7 @@ Makefile
 cmake_install.cmake
 .idea
 CMakeFiles
+.cproject
+.project
+SPLP
+*.status

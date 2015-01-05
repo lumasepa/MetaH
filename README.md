@@ -22,4 +22,4 @@ To execute the localization problem
 
 # Documentation
 ---------------
-find the problems deciption in doc/Trabajo.pdf
+find the problems description in doc/Trabajo.pdf

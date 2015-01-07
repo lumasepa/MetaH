@@ -9,7 +9,7 @@ class eoInitP: public eoInit<EOT>
 public:
 
 
-    eoInitP(unsigned _combien, int _p)
+    eoInitP(unsigned _combien, unsigned int _p)
             : combien(_combien), p(_p){}
 
     virtual void operator()(EOT& chrom)

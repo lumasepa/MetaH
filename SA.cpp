@@ -1,8 +1,8 @@
 //-----------------------------------------------------------------------------
-/** lesson1_simpleHC.cpp
+/** testSimulatedAnnealing.cpp
  *
- * SV - 27/04/10 - version 1
- *
+ * SV - 29/03/10
+ * JH - 20/04/10
  */
 //-----------------------------------------------------------------------------
 
@@ -11,15 +11,14 @@
 
 #include <stdexcept>  // runtime_error 
 #include <iostream>   // cout
-#include <fstream>   // ifstream
-#include <sstream>    // ostrstream, istrstream
+#include <sstream>  // ostrstream, istrstream
 #include <fstream>
 #include <string.h>
 
 // the general include for eo
 #include <eo>
+#include <ga.h>
 
-// declaration of the namespace
 using namespace std;
 
 //-----------------------------------------------------------------------------
@@ -27,19 +26,32 @@ using namespace std;
 #include <ga/eoBit.h>                         // bit string : see also EO tutorial lesson 1: FirstBitGA.cpp
 #include <problems/bitString/moBitNeighbor.h> // neighbor of bit string
 
-//-----------------------------------------------------------------------------
-// fitness function, and evaluation of neighbors
-#include "SPLP_locEval.h"
-#include <locIncrEval.h>
-#include <eval/moFullEvalByModif.h>
 
-//-----------------------------------------------------------------------------
-// neighborhood description
+// fitness function
+#include <eval/queenEval.h>
+#include <eval/moFullEvalByModif.h>
+#include <eval/moFullEvalByCopy.h>
+
+#include <neighborhood/moRndWithReplNeighborhood.h>
+
+//Algorithm and its components
+#include <coolingSchedule/moCoolingSchedule.h>
+#include <algo/moSA.h>
+
+//continuators
+#include <continuator/moCheckpoint.h>
+#include <continuator/moFitnessStat.h>
+#include <continuator/moCounterMonitorSaver.h>
+
+#include <problems/permutation/moShiftNeighbor.h>
+
+// Singleton with the problem description
+#include <SPLP_ProblemDescription.h>
+
+#include "SPLP_locEval.h"
+
 #include <neighborhood/moOrderNeighborhood.h> // visit all neighbors in increasing order of bit index
 
-//-----------------------------------------------------------------------------
-// the simple Hill-Climbing local search
-#include <algo/moSimpleHC.h>
 
 // Declaration of types
 //-----------------------------------------------------------------------------
@@ -49,22 +61,16 @@ typedef eoBit<eoMinimizingFitness> Indi;                      // bit string with
 // Neighbor = How to compute the neighbor from the solution + information on it (i.e. fitness)
 // all classes from paradisEO-mo use this template type
 typedef moBitNeighbor<eoMinimizingFitness> Neighbor ;         // bit string neighbor with unsigned fitness type
+typedef moShiftNeighbor<Indi> shiftNeighbor;
+typedef moRndWithReplNeighborhood<shiftNeighbor> rndShiftNeighborhood; //rnd shift Neighborhood (Indexed)
 
-// Singleton with the problem description
-#include <SPLP_ProblemDescription.h>
-
-
-// Main function
-//-----------------------------------------------------------------------------
 void main_function(int argc, char **argv)
 {
     /* =========================================================
-     *
-     * Parameters from parser
-     *
-     * ========================================================= */
-    // more information on the input parameters: see EO tutorial lesson 3
-    // but don't care at first it just read the parameters of the bit string size and the random seed.
+    *
+    * Parameters
+    *
+    * ========================================================= */
 
     // First define a parser from the command-line arguments
     eoParser parser(argc, argv);
@@ -72,15 +78,19 @@ void main_function(int argc, char **argv)
     // For each parameter, define Parameter, read it through the parser,
     // and assign the value to the variable
 
+    eoValueParam<uint32_t> seedParam(time(0), "seed", "Random number seed", 'S');
+    parser.processParam( seedParam );
+    unsigned seed = seedParam.value();
+
+    // description of genotype
+    eoValueParam<unsigned int> vecSizeParam(8, "vecSize", "Genotype size", 'V');
+    parser.processParam( vecSizeParam, "Representation" );
+    unsigned vecSize = vecSizeParam.value();
+
     // File with the problem
     eoValueParam<string> problem_file_param("", "problem_file", "Problem File", 'F', true);
     parser.processParam( problem_file_param );
     string problem_file = problem_file_param.value();
-
-    // random seed parameter
-    eoValueParam<uint32_t> seedParam(time(0), "seed", "Random number seed", 'S');
-    parser.processParam( seedParam );
-    unsigned seed = seedParam.value();
 
     // the name of the "status" file where all actual parameter values will be saved
     string str_status = parser.ProgramName() + ".status"; // default value
@@ -101,7 +111,6 @@ void main_function(int argc, char **argv)
     cout << "problem_file : " << problem_file << endl;
     problem_file = "cap71.txt";
     problemDescription.set_problem_from_file(problem_file);
-    //problemDescription.print(cout);
 
     /* =========================================================
      *
@@ -109,16 +118,10 @@ void main_function(int argc, char **argv)
      *
      * ========================================================= */
 
-    // reproducible random seed: if you don't change SEED above,
-    // you'll aways get the same result, NOT a random run
-    // more information: see EO tutorial lesson 1 (FirstBitGA.cpp)
+    //reproducible random seed: if you don't change SEED above,
+    // you'll always get the same result, NOT a random run
     rng.reseed(seed);
 
-    /* =========================================================
-     *
-     * Initialization of the solution
-     *
-     * ========================================================= */
 
     // a Indi random initializer: each bit is random
     // more information: see EO tutorial lesson 1 (FirstBitGA.cpp)
@@ -134,17 +137,8 @@ void main_function(int argc, char **argv)
     // the fitness function is just the number of 1 in the bit string
     oneMaxEval<Indi> fullEval;
 
-    /* =========================================================
-     *
-     * evaluation of a neighbor solution
-     *
-     * ========================================================= */
-
     // Use it if there is no incremental evaluation: a neighbor is evaluated by the full evaluation of a solution
     moFullEvalByModif<Neighbor> neighborEval(fullEval);
-
-    // Incremental evaluation of the neighbor: fitness is modified by +/- 1
-    // moOneMaxIncrEval<Neighbor> neighborEval;
 
     /* =========================================================
      *
@@ -152,43 +146,82 @@ void main_function(int argc, char **argv)
      *
      * ========================================================= */
 
-    // Exploration of the neighborhood in increasing order of the neigbor's index:
-    // bit-flip from bit 0 to bit (vecSize - 1)
-    moOrderNeighborhood<Neighbor> neighborhood(problemDescription.warehouses_number);
-
+    //moOrderNeighborhood<Neighbor> neighborhood(problemDescription.warehouses_number);
+    rndShiftNeighborhood neighborhood((problemDescription.warehouses_number-1) * (problemDescription.warehouses_number-1));
     /* =========================================================
      *
      * the local search algorithm
      *
      * ========================================================= */
 
-    moSimpleHC<Neighbor> hc(neighborhood, fullEval, neighborEval);
+    moSA<Neighbor> localSearch1(neighborhood, fullEval, neighborEval);
 
     /* =========================================================
      *
-     * executes the local search from a random solution
+     * execute the local search from random solution
      *
      * ========================================================= */
 
-    // The current solution
-    Indi solution;
+    Indi solution1, solution2;
 
-    // Apply random initialization
-    random(solution);
+    random(solution1);
 
-    // Evaluation of the initial solution:
-    // can be evaluated here, or else it will be done at the beginning of the local search
-    fullEval(solution);
+    fullEval(solution1);
 
-    // Output: the intial solution
-    cout << "initial: " << solution << endl ;
+    std::cout << "#########################################" << std::endl;
+    std::cout << "initial solution1: " << solution1 << std::endl ;
 
-    // Apply the local search on the solution !
-    hc(solution);
+    localSearch1(solution1);
 
-    // Output: the final solution
-    cout << "final:   " << solution << endl ;
+    std::cout << "final solution1: " << solution1 << std::endl ;
+    std::cout << "#########################################" << std::endl;
 
+
+    /* =========================================================
+     *
+     * the cooling schedule of the process
+     *
+     * ========================================================= */
+
+    // initial temp, factor of decrease, number of steps without decrease, final temp.
+//    moSimpleCoolingSchedule<Indi> coolingSchedule(1, 0.9, 100, 0.01);
+
+    /* =========================================================
+     *
+     * Comparator of neighbors
+     *
+     * ========================================================= */
+
+//    moSolNeighborComparator<shiftNeighbor> solComparator;
+
+    /* =========================================================
+     *
+     * Example of Checkpointing
+     *
+     * ========================================================= */
+/*
+    moTrueContinuator<shiftNeighbor> continuator;//always continue
+    moCheckpoint<shiftNeighbor> checkpoint(continuator);
+    moFitnessStat<Indi> fitStat;
+    checkpoint.add(fitStat);
+    eoFileMonitor monitor("fitness.out", "");
+    moCounterMonitorSaver countMon(100, monitor);
+    checkpoint.add(countMon);
+    monitor.add(fitStat);
+
+//  moSA<shiftNeighbor> localSearch2(neighborhood, fullEval, neighborEval, coolingSchedule, solComparator, checkpoint);
+
+    random(solution2);
+
+    fullEval(solution2);
+
+    std::cout << "#########################################" << std::endl;
+    std::cout << "initial solution2: " << solution2 << std::endl ;
+
+//    localSearch2(solution2);
+
+    std::cout << "final solution2: " << solution2 << std::endl ;
+    std::cout << "#########################################" << std::endl; */
 }
 
 // A main that catches the exceptions

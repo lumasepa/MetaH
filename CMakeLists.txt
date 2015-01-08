@@ -58,8 +58,8 @@ LINK_DIRECTORIES(${PARADISEO_EO_BIN_DIR}/lib)
 ######################################################################################
 
 ADD_EXECUTABLE(SPLP SPLP.cpp)
+ADD_EXECUTABLE(TS TS.cpp)
 ADD_EXECUTABLE(p-mediana p-mediana.cpp)
-ADD_EXECUTABLE(SA SA.cpp)
 
 
 
@@ -72,11 +72,10 @@ ADD_EXECUTABLE(SA SA.cpp)
 
 # Only if you need to link libraries
 TARGET_LINK_LIBRARIES(SPLP ga eo eoutils)
+TARGET_LINK_LIBRARIES(TS ga eo eoutils)
 TARGET_LINK_LIBRARIES(p-mediana ga eo eoutils)
-TARGET_LINK_LIBRARIES(SA ga eo eoutils)
 
 ######################################################################################
-
 
 
 
